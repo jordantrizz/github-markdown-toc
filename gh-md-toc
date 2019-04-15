@@ -96,6 +96,7 @@ gh_toc(){
     local gh_src_copy=$1
     local gh_ttl_docs=$2
     local need_replace=$3
+    local no_backup=$4
 
     if [ "$gh_src" = "" ]; then
         echo "Please, enter URL or local path for a README.md"
@@ -161,10 +162,13 @@ gh_toc(){
             else
                 sed -i "/${ts}/r ${toc_path}" "$gh_src"
             fi
+	    if [ $no_backup = "yes" ]; then
+		rm ${toc_path} ${gh_src}${ext}
+	    fi
             echo
             echo "!! TOC was added into: '$gh_src'"
-            echo "!! Origin version of the file: '${gh_src}${ext}'"
-            echo "!! TOC added into a separate file: '${toc_path}'"
+            if [ -z $no_backup ]; then echo "!! Origin version of the file: '${gh_src}${ext}'"; fi
+            if [ -z $no_backup ]; then echo "!! TOC added into a separate file: '${toc_path}'"; fi
             echo
         fi
     fi
@@ -218,10 +222,11 @@ gh_toc_app() {
         echo "GitHub TOC generator ($app_name): $gh_toc_version"
         echo ""
         echo "Usage:"
-        echo "  $app_name [--insert] src [src]  Create TOC for a README file (url or local path)"
-        echo "  $app_name -                     Create TOC for markdown from STDIN"
-        echo "  $app_name --help                Show help"
-        echo "  $app_name --version             Show version"
+        echo "  $app_name [--insert] src [src]  		Create TOC for a README file (url or local path)"
+	echo "  $app_name [--nobackup-insert] src [src] 	Create TOC without generating a backup"	
+        echo "  $app_name -                     		Create TOC for markdown from STDIN"
+        echo "  $app_name --help                		Show help"
+        echo "  $app_name --version             		Show version"
         return
     fi
 
@@ -259,10 +264,16 @@ gh_toc_app() {
         shift
     fi
 
+    if [ "$1" = '--nobackup-insert' ]; then
+        need_replace="yes"
+	no_backup="yes"
+        shift
+    fi
+
     for md in "$@"
     do
         echo ""
-        gh_toc "$md" "$#" "$need_replace"
+        gh_toc "$md" "$#" "$need_replace" "$no_backup"
     done
 
     echo ""
